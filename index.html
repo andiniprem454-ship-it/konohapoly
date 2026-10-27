@@ -3007,7 +3007,31 @@ function renderRooms(rooms) {
     const btn = h('button', 'btn ' + (r.status === 'lobby' && !mine ? 'primary' : ''), mine ? 'Kembali' : r.status === 'lobby' ? (r.players.length >= cap ? 'Penuh' : 'Masuk') : 'Tonton');
     if (r.status === 'lobby' && r.players.length >= cap && !mine) btn.disabled = true;
     btn.onclick = () => joinRoom(r.id);
-    li.append(info, seats, st, btn); ul.append(li);
+    
+    // Admin action: Delete Room button directly from lobby
+    if (app.isAdmin) {
+      const delBtn = h('button', 'btn ghost', '🗑️');
+      delBtn.title = 'Hapus room ini (Khusus Admin)';
+      delBtn.style.padding = '6px 10px';
+      delBtn.style.color = '#ef4444';
+      delBtn.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+      delBtn.onclick = async (e) => {
+        e.stopPropagation();
+        if (confirm(`Admin: Hapus room "${r.name}" (${r.id}) secara permanen?`)) {
+          try {
+            if (app.net.deleteRoom) await app.net.deleteRoom(r.id);
+            else if (app.net.mutate) await app.net.mutate(r.id, () => 'delete');
+            toast(`Room "${r.name}" berhasil dihapus.`);
+          } catch(err) {
+            toast('Gagal menghapus: ' + (err.message || err));
+          }
+        }
+      };
+      li.append(info, seats, st, btn, delBtn);
+    } else {
+      li.append(info, seats, st, btn);
+    }
+    ul.append(li);
   });
 }
 
